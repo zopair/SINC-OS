@@ -1,0 +1,29 @@
+name: OrbitX Global Empire Engine
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # يعمل تلقائياً كل 6 ساعات لضمان الاستمرارية
+  workflow_dispatch: # يسمح لك بتشغيله يدوياً في أي وقت
+
+jobs:
+  run-orbitx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install python-telegram-bot groq redis
+
+      - name: Launch OrbitX Agents
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          BINANCE_UID: "717654739"
+        run: python orbitx_final.py
