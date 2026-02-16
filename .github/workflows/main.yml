@@ -1,6 +1,12 @@
 
 name: OrbitX Force Engine
 on: [push, workflow_dispatch]
+
+# تصريح السيادة الكاملة للأكشن
+permissions:
+  contents: write
+  actions: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
