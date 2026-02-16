@@ -1,9 +1,10 @@
+
 name: OrbitX Global Empire Engine
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # يعمل تلقائياً كل 6 ساعات لضمان الاستمرارية
-  workflow_dispatch: # يسمح لك بتشغيله يدوياً في أي وقت
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 jobs:
   run-orbitx:
@@ -19,7 +20,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install python-telegram-bot groq redis
+          pip install pyTelegramBotAPI groq redis
 
       - name: Launch OrbitX Agents
         env:
