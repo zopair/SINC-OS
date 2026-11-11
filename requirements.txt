@@ -1,4 +1,6 @@
-yt-dlp>=2025.1.15
-google-api-python-client>=2.150.0
-google-auth-oauthlib>=1.2.1
-google-auth-httplib2>=0.2.0
+# Shared runtime dependencies for the gateway, orchestrator, and optional Telegram bot.
+fastapi>=0.115,<1
+httpx>=0.27,<1
+structlog>=24.4,<26
+uvicorn[standard]>=0.30,<1
+pyTelegramBotAPI>=4.22,<5

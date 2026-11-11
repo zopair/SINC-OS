@@ -1,23 +1,43 @@
-version: "3.9"
+name: sinc-os
 services:
-  redis:
-    image: redis:7-alpine
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-    networks:
-      - saos_internal
-  gateway:
-    build: ./services/gateway
-    networks:
-      - saos_internal
   orchestrator:
-    build: ./services/orchestrator
-    networks:
-      - saos_internal
+    build:
+      context: .
+      dockerfile: services/orchestrator/Dockerfile
+    expose:
+      - "8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks: [sinc_internal]
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    environment:
+      ORCHESTRATOR_URL: http://orchestrator:8001
+    ports:
+      - "8000:8000"
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    networks: [sinc_internal]
+    restart: unless-stopped
+
+  orbitx:
+    profiles: [bot]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+    restart: unless-stopped
+
 networks:
-  saos_internal:
+  sinc_internal:
     driver: bridge
