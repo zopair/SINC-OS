@@ -1,3 +1,7 @@
+# SINC-OS
+
+This repository currently contains two separate PoC tracks: the authorized-media workflow described below and the FastAPI Gateway/Orchestrator service stack documented in [services/README.md](./services/README.md). These tracks are not yet integrated. The service stack currently exposes health endpoints only; it is not a task-execution orchestrator.
+
 # Autonomous Media Pipeline
 
 A GitHub Actions workflow for processing **owned or explicitly licensed** media.
