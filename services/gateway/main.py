@@ -1,23 +1,46 @@
-from fastapi import FastAPI, Request
-import httpx, time, uuid, structlog
-from tenacity import retry, stop_after_attempt, wait_exponential
-from pybreaker import CircuitBreaker
+"""HTTP gateway for the SINC-OS orchestrator."""
+
+import os
+import time
+import uuid
+
+import httpx
+import structlog
+from fastapi import FastAPI, HTTPException, Request
 
 structlog.configure()
 logger = structlog.get_logger()
 app = FastAPI(title="SINC Resilient Gateway")
-db_breaker = CircuitBreaker(fail_max=5, reset_timeout=60)
+
 
 @app.middleware("http")
 async def resilience_middleware(request: Request, call_next):
-    correlation_id = request.headers.get("X-Correlation-ID", str(uuid.uuid4()))
-    start_time = time.time()
+    correlation_id = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())
+    started_at = time.monotonic()
     response = await call_next(request)
-    duration = time.time() - start_time
-    logger.info("request_processed", path=request.url.path, duration=duration, correlation_id=correlation_id)
+    response.headers["X-Correlation-ID"] = correlation_id
+    logger.info(
+        "request_processed",
+        path=request.url.path,
+        duration_seconds=round(time.monotonic() - started_at, 6),
+        correlation_id=correlation_id,
+    )
     return response
+
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "service": "gateway"}
+
 
 @app.get("/orchestrator/health")
 async def proxy_health():
-    async with httpx.AsyncClient() as client:
-        return (await client.get("http://127.0.0.1:8001/health")).json()
+    upstream = os.getenv("ORCHESTRATOR_URL", "http://orchestrator:8001").rstrip("/")
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(f"{upstream}/health")
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPError as exc:
+        logger.warning("orchestrator_unavailable", error_type=type(exc).__name__)
+        raise HTTPException(status_code=503, detail="Orchestrator is unavailable") from exc
